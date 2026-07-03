@@ -1,0 +1,36 @@
+name: CL Screener
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: screener
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore screener state
+        uses: actions/cache/restore@v4
+        with:
+          path: state.json
+          key: cl-state-${{ github.run_id }}
+          restore-keys: cl-state-
+      - name: Run screener
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python screener.py
+      - name: Save screener state
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: state.json
+          key: cl-state-${{ github.run_id }}
