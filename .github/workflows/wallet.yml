@@ -35,3 +35,4 @@ jobs:
         with:
           path: wallet_state.json
           key: wallet-state-${{ github.run_id }}
+
