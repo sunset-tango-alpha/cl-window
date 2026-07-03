@@ -1,0 +1,37 @@
+name: Wallet tracker
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: wallet
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore wallet state
+        uses: actions/cache/restore@v4
+        with:
+          path: wallet_state.json
+          key: wallet-state-${{ github.run_id }}
+          restore-keys: wallet-state-
+      - name: Run wallet tracker
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          WATCH_WALLETS: ${{ secrets.WATCH_WALLETS }}
+        run: python screener.py --wallets-only
+      - name: Save wallet state
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: wallet_state.json
+          key: wallet-state-${{ github.run_id }}
